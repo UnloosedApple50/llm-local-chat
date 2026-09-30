@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM Local Chat</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🤖 LLM Local Chat</h1>
+                <p class="subtitle">Local • CPU • Offline</p>
+            </div>
+            <button class="btn-new-chat" onclick="newChat()">
+                <span>➕</span> Nova Conversa
+            </button>
+
+            <!-- Agent Selection -->
+            <div class="sidebar-section">
+                <h3>Agente</h3>
+                <div class="agent-list" id="agentList">
+                    <button class="agent-btn active" data-agent="auto" onclick="setAgent('auto')">
+                        🔄 Auto
+                    </button>
+                    <button class="agent-btn" data-agent="athena" onclick="setAgent('athena')">
+                        🧠 Athena
+                    </button>
+                    <button class="agent-btn" data-agent="mercatus" onclick="setAgent('mercatus')">
+                        📈 Mercatus
+                    </button>
+                    <button class="agent-btn" data-agent="cortex" onclick="setAgent('cortex')">
+                        🖥️ Cortex
+                    </button>
+                    <button class="agent-btn" data-agent="localmind" onclick="setAgent('localmind')">
+                        ⚡ LocalMind
+                    </button>
+                </div>
+            </div>
+
+            <!-- Power Level -->
+            <div class="sidebar-section">
+                <h3>Potência</h3>
+                <div class="power-list" id="powerList">
+                    <button class="power-btn" data-power="minimal" onclick="setPower('minimal')">
+                        🔋 Minimal
+                    </button>
+                    <button class="power-btn active" data-power="medium" onclick="setPower('medium')">
+                        ⚖️ Medium
+                    </button>
+                    <button class="power-btn" data-power="ultra" onclick="setPower('ultra')">
+                        🚀 Ultra
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="status-indicator" id="status">
+                    <span class="dot"></span>
+                    <span class="status-text">Conectando...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat -->
+        <main class="chat-container">
+            <div class="chat-messages" id="messages">
+                <div class="welcome-message">
+                    <h2>Bem-vindo ao LLM Local Chat!</h2>
+                    <p>Interface de chat com IA local — otimizada para PCs fracos.</p>
+                    <p>Escolha um agente e nível de potência na barra lateral.</p>
+                    <div class="suggestions">
+                        <button onclick="sendSuggestion('O que você pode fazer?')">O que você pode fazer?</button>
+                        <button onclick="sendSuggestion('Como funciona o mercado de ações?')">Mercado de ações</button>
+                        <button onclick="sendSuggestion('Como gerenciar um cluster de servidores?')">Cluster de servidores</button>
+                        <button onclick="sendSuggestion('Conte uma piada')">Conte uma piada</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea
+                        id="input"
+                        placeholder="Digite sua mensagem..."
+                        rows="1"
+                        onkeydown="handleKeyDown(event)"
+                        oninput="autoResize(this)"
+                    ></textarea>
+                    <button class="btn-send" id="sendBtn" onclick="sendMessage()">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                    </button>
+                </div>
+                <p class="input-hint">Enter para enviar • Shift+Enter para nova linha</p>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let sessionId = null;
+        let isStreaming = false;
+        let currentAgent = 'auto';
+        let currentPower = 'medium';
+
+        // Initialize
+        async function init() {
+            await checkHealth();
+            await newChat();
+            setInterval(checkHealth, 10000);
+        }
+
+        async function checkHealth() {
+            try {
+                const resp = await fetch('/api/health');
+                const data = await resp.json();
+                const statusEl = document.getElementById('status');
+                const dot = statusEl.querySelector('.dot');
+                const text = statusEl.querySelector('.status-text');
+
+                if (data.ollama_available) {
+                    dot.className = 'dot online';
+                    text.textContent = `Online • ${data.model || 'Modelo desconhecido'}`;
+                } else {
+                    dot.className = 'dot offline';
+                    text.textContent = 'Ollama offline';
+                }
+            } catch (e) {
+                const statusEl = document.getElementById('status');
+                statusEl.querySelector('.dot').className = 'dot offline';
+                statusEl.querySelector('.status-text').textContent = 'Erro de conexão';
+            }
+        }
+
+        async function newChat() {
+            try {
+                const resp = await fetch('/api/session/new', { method: 'POST' });
+                const data = await resp.json();
+                sessionId = data.session_id;
+                document.getElementById('messages').innerHTML = `
+                    <div class="welcome-message">
+                        <h2>Nova conversa iniciada!</h2>
+                        <p>Agente: <strong>${getAgentName(currentAgent)}</strong> • Potência: <strong>${currentPower}</strong></p>
+                        <p>Como posso ajudar?</p>
+                    </div>
+                `;
+            } catch (e) {
+                console.error('Failed to create session:', e);
+            }
+        }
+
+        function getAgentName(agent) {
+            const names = {
+                'auto': '🔄 Auto',
+                'athena': '🧠 Athena',
+                'mercatus': '📈 Mercatus',
+                'cortex': '🖥️ Cortex',
+                'localmind': '⚡ LocalMind',
+            };
+            return names[agent] || agent;
+        }
+
+        function setAgent(agent) {
+            currentAgent = agent;
+            document.querySelectorAll('.agent-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.agent === agent);
+            });
+            updateSessionConfig();
+        }
+
+        function setPower(power) {
+            currentPower = power;
+            document.querySelectorAll('.power-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.power === power);
+            });
+            updateSessionConfig();
+        }
+
+        async function updateSessionConfig() {
+            if (!sessionId) return;
+            try {
+                await fetch('/api/session/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        agent: currentAgent === 'auto' ? null : currentAgent,
+                        power: currentPower,
+                        auto_route: currentAgent === 'auto',
+                    }),
+                });
+            } catch (e) {
+                console.error('Failed to update config:', e);
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        }
+
+        function sendSuggestion(text) {
+            document.getElementById('input').value = text;
+            sendMessage();
+        }
+
+        async function sendMessage() {
+            if (isStreaming) return;
+
+            const input = document.getElementById('input');
+            const message = input.value.trim();
+            if (!message) return;
+
+            isStreaming = true;
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Add user message
+            addMessage('user', message);
+
+            // Add placeholder for assistant
+            const messagesEl = document.getElementById('messages');
+            const assistantDiv = document.createElement('div');
+            assistantDiv.className = 'message assistant';
+            assistantDiv.innerHTML = '<div class="message-content"><span class="typing">Pensando...</span></div>';
+            messagesEl.appendChild(assistantDiv);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+
+            try {
+                const resp = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        session_id: sessionId,
+                        agent: currentAgent === 'auto' ? null : currentAgent,
+                        power: currentPower,
+                        auto_route: currentAgent === 'auto',
+                    }),
+                });
+
+                const reader = resp.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+                let fullContent = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop() || '';
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') continue;
+
+                            try {
+                                const parsed = JSON.parse(data);
+                                fullContent += parsed.content;
+                                assistantDiv.innerHTML = `
+                                    <div class="message-content">
+                                        <div class="agent-tag">${getAgentName(parsed.agent || currentAgent)}</div>
+                                        <div class="markdown">${formatMarkdown(fullContent)}</div>
+                                    </div>
+                                `;
+                                messagesEl.scrollTop = messagesEl.scrollHeight;
+                            } catch (e) {
+                                // Ignore parse errors
+                            }
+                        }
+                    }
+                }
+
+                if (!fullContent) {
+                    assistantDiv.innerHTML = '<div class="message-content"><span class="error">Erro: resposta vazia do modelo</span></div>';
+                }
+
+            } catch (e) {
+                assistantDiv.innerHTML = `<div class="message-content"><span class="error">Erro: ${e.message}</span></div>`;
+            }
+
+            isStreaming = false;
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function addMessage(role, content) {
+            const messagesEl = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = `message ${role}`;
+            div.innerHTML = `
+                <div class="message-avatar">${role === 'user' ? '👤' : '🤖'}</div>
+                <div class="message-content">
+                    <div class="markdown">${formatMarkdown(content)}</div>
+                </div>
+            `;
+            messagesEl.appendChild(div);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function formatMarkdown(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/`(.+?)`/g, '<code>$1</code>')
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+                .replace(/\n/g, '<br>');
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>
