@@ -45,7 +45,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 # Windows: baixar de https://ollama.com/download
 ```
 
-### 2. Baixar nossos modelos
+### 2. Baixar modelos 
 
 ```bash
 # Athena 12B — uso geral (recomendado)
