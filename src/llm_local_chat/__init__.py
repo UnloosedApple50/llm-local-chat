@@ -35,13 +35,13 @@ LOCAL_MODELS = {
         "quantization": "Q4_K_M",
         "system_prompt": "You are Mercatus, a sales and trading expert. You provide actionable advice on sales strategies, trading analysis, risk management, and financial decisions.",
     },
-    "cortex": {
+    "hermes": {
         "base": "Qwen 2.5 12B",
-        "description": "Multi-machine orchestration assistant",
+        "description": "General conversation assistant — chat, writing, analysis",
         "ram_gb": 4,
         "disk_gb": 7,
         "quantization": "Q4_K_M",
-        "system_prompt": "You are Cortex, a multi-machine orchestration expert. You help manage distributed computing, task scheduling, and cluster management.",
+        "system_prompt": "You are Hermes, a helpful and knowledgeable assistant. You can help with conversation, writing, analysis, coding, and general questions. Be concise, clear, and helpful.",
     },
     "localmind": {
         "base": "Qwen 2.5 7B",
@@ -83,11 +83,11 @@ AGENT_ROUTING = {
         "vendas", "trading", "receita", "lucro", "mercado", "investimento",
         "ação", "negócio", "cliente", "preço", "negociação",
     ],
-    "cortex": [
-        "cluster", "orchestration", "distributed", "server", "node", "task",
-        "schedule", "deploy", "docker", "kubernetes", "load balance",
-        "cluster", "orquestração", "distribuído", "servidor", "nó", "tarefa",
-        "agendar", "deploy", "docker", "kubernetes", "balanceamento",
+    "hermes": [
+        "hermes", "conversation", "chat", "write", "essay", "translate",
+        "summarize", "explain", "analyze", "code", "help", "question",
+        "conversa", "chat", "escrever", "ensaio", "traduzir", "resumir",
+        "explicar", "analisar", "código", "ajuda", "pergunta",
     ],
     "athena": [],  # Default agent
 }
