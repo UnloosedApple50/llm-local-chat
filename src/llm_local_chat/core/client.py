@@ -57,7 +57,7 @@ class OllamaClient:
     def __init__(
         self,
         host: str = "http://localhost:11434",
-        model: str = "athena",
+        model: str = "qwen2.5:7b",
         timeout: float = 300.0,
     ) -> None:
         self.host = host.rstrip("/")

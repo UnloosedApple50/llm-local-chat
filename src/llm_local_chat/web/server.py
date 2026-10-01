@@ -19,7 +19,7 @@ from llm_local_chat.utils.logger import get_logger
 logger = get_logger("web")
 
 # Paths
-BASE_DIR = Path(__file__).parent.parent.parent
+BASE_DIR = Path(__file__).parent.parent.parent.parent
 TEMPLATES_DIR = BASE_DIR / "src" / "llm_local_chat" / "web" / "templates"
 STATIC_DIR = BASE_DIR / "src" / "llm_local_chat" / "web" / "static"
 
