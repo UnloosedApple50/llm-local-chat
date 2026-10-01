@@ -294,8 +294,14 @@ class ChatManager:
         if max_tokens is None:
             max_tokens = power_config["max_tokens"]
 
-        # Get system prompt for the agent
-        system_prompt = LOCAL_MODELS.get(agent, LOCAL_MODELS["athena"])["system_prompt"]
+        # Get agent config
+        agent_config = LOCAL_MODELS.get(agent, LOCAL_MODELS["athena"])
+        system_prompt = agent_config["system_prompt"]
+        ollama_model = agent_config.get("ollama_model", self.client.model)
+
+        # Temporarily switch model for this agent
+        original_model = self.client.model
+        self.client.model = ollama_model
 
         # Add user message
         self.add_message(session_id, ChatMessage(role="user", content=message))
@@ -310,6 +316,9 @@ class ChatManager:
         ):
             resp.agent = agent
             yield resp
+
+        # Restore original model
+        self.client.model = original_model
 
         # Add assistant message
         if resp.content and not resp.content.startswith("Error:"):

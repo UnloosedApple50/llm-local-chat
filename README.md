@@ -6,9 +6,9 @@
 
 | Nome | Base | Parâmetros | RAM mínima | Descrição |
 |------|------|------------|------------|-----------|
-| **Athena** | Qwen 2.5 12B | 12B | 4GB | Assistente geral — conversa, análise, código |
-| **Mercatus** | Qwen 2.5 12B | 12B | 4GB | Especialista em vendas e trading |
-| **Hermes** | Qwen 2.5 12B | 12B | 4GB | Assistente de conversação geral |
+| **Athena** | GLM-4 32B | 32B | 16GB | Especialista em código — escreve, revisa, debuga |
+| **Mercatus** | Qwen 2.5 12B | 12B | 8GB | Especialista em vendas e trading |
+| **Hermes** | Llama 3.1 8B | 8B | 6GB | Assistente de conversação geral |
 | **LocalMind** | Qwen 2.5 7B | 7B | 4GB | Leve — roda em PCs fracos |
 
 ## ⚡ Níveis de Potência
