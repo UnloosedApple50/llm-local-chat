@@ -95,6 +95,7 @@
                             <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
                         </svg>
                     </button>
+                    <button class="btn-stop" id="stopBtn" onclick="stopGeneration()" title="Parar resposta">✕</button>
                 </div>
                 <p class="input-hint">Enter para enviar • Shift+Enter para nova linha</p>
             </div>
@@ -106,6 +107,7 @@
         let isStreaming = false;
         let currentAgent = 'auto';
         let currentPower = 'medium';
+        let abortController = null;
 
         // Initialize
         async function init() {
@@ -215,6 +217,16 @@
             sendMessage();
         }
 
+        function stopGeneration() {
+            if (abortController) {
+                abortController.abort();
+                abortController = null;
+            }
+            isStreaming = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('stopBtn').classList.remove('visible');
+        }
+
         async function sendMessage() {
             if (isStreaming) return;
 
@@ -225,6 +237,8 @@
             isStreaming = true;
             input.value = '';
             input.style.height = 'auto';
+            document.getElementById('sendBtn').disabled = true;
+            document.getElementById('stopBtn').classList.add('visible');
 
             // Add user message
             addMessage('user', message);
@@ -237,6 +251,8 @@
             messagesEl.appendChild(assistantDiv);
             messagesEl.scrollTop = messagesEl.scrollHeight;
 
+            abortController = new AbortController();
+
             try {
                 const resp = await fetch('/api/chat', {
                     method: 'POST',
@@ -248,6 +264,7 @@
                         power: currentPower,
                         auto_route: currentAgent === 'auto',
                     }),
+                    signal: abortController.signal,
                 });
 
                 const reader = resp.body.getReader();
@@ -290,10 +307,16 @@
                 }
 
             } catch (e) {
-                assistantDiv.innerHTML = `<div class="message-content"><span class="error">Erro: ${e.message}</span></div>`;
+                if (e.name === 'AbortError') {
+                    assistantDiv.innerHTML = '<div class="message-content"><span class="typing">Resposta interrompida.</span></div>';
+                } else {
+                    assistantDiv.innerHTML = `<div class="message-content"><span class="error">Erro: ${e.message}</span></div>`;
+                }
             }
 
             isStreaming = false;
+            document.getElementById('sendBtn').disabled = false;
+            document.getElementById('stopBtn').classList.remove('visible');
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 

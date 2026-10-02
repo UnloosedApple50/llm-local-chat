@@ -299,26 +299,44 @@ class ChatManager:
         system_prompt = agent_config["system_prompt"]
         ollama_model = agent_config.get("ollama_model", self.client.model)
 
-        # Temporarily switch model for this agent
-        original_model = self.client.model
-        self.client.model = ollama_model
-
         # Add user message
         self.add_message(session_id, ChatMessage(role="user", content=message))
 
-        # Get response
+        # Get response with fallback
         messages = self.get_session(session_id)
-        async for resp in self.client.chat(
-            messages,
-            system_prompt=system_prompt,
-            temperature=temperature,
-            max_tokens=max_tokens,
-        ):
-            resp.agent = agent
-            yield resp
+        response_sent = False
 
-        # Restore original model
-        self.client.model = original_model
+        # Try primary model first, then fallback
+        models_to_try = [ollama_model, "qwen2.5:0.5b", "qwen2.5:7b"]
+        for model in models_to_try:
+            try:
+                original_model = self.client.model
+                self.client.model = model
+
+                async for resp in self.client.chat(
+                    messages,
+                    system_prompt=system_prompt,
+                    temperature=temperature or 0.7,
+                    max_tokens=max_tokens or 4096,
+                ):
+                    resp.agent = agent
+                    yield resp
+                    response_sent = True
+
+                self.client.model = original_model
+                if response_sent:
+                    break
+            except Exception as e:
+                logger.warning(f"Model {model} failed: {e}, trying fallback...")
+                continue
+
+        if not response_sent:
+            yield ChatResponse(
+                content="Error: No model available. Please check Ollama is running.",
+                model="unknown",
+                agent=agent,
+                done=True,
+            )
 
         # Add assistant message
         if resp.content and not resp.content.startswith("Error:"):
