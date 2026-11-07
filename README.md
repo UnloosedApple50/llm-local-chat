@@ -117,9 +117,9 @@ TEMPERATURE=0.7
 
 | PC | RAM | CPU | Tokens/seg |
 |----|-----|-----|------------|
-| Celeron + 4GB | 4GB | Celeron N4000 | ~2-5 t/s |
+| x86_64 CPU + 4GB | 4GB | x86_64 CPU N4000 | ~2-5 t/s |
 | i3 + 8GB | 8GB | i3-8100 | ~8-15 t/s |
-| i5 + 8GB | 8GB | i5-7360U | ~10-20 t/s |
+| i5 + 8GB | 8GB | x86_64 CPU | ~10-20 t/s |
 | i7 + 16GB | 16GB | i7-9700K | ~20-35 t/s |
 
 ## 🛠️ Desenvolvimento

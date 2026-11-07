@@ -56,6 +56,6 @@ class TestOllamaClient:
         assert client.model == "qwen2.5:12b"
 
     def test_init_custom(self):
-        client = OllamaClient(host="http://192.168.1.100:11434", model="llama3.1:8b")
-        assert client.host == "http://192.168.1.100:11434"
+        client = OllamaClient(host="http://10.0.0.100:11434", model="llama3.1:8b")
+        assert client.host == "http://10.0.0.100:11434"
         assert client.model == "llama3.1:8b"
